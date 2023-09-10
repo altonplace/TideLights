@@ -1,0 +1,8 @@
+.vscode/launch.json
+tide_lts/__pycache__/
+tide_lts/data.csv
+tide_lts/install.sh
+tide_lts/tide_lights.log
+tide_lts/tide_lts.service
+tide_lts/tide_lts.sh
+tide_lights.log
