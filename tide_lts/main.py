@@ -54,8 +54,8 @@ interval = 'hilo'
 units = 'english'
 
 # pixel strip variables
-high_color = (255, 0, 0) # red
-low_color = (0, 0, 255) # blue
+rising_color = (0, 0, 255) # blue
+falling_color = (255, 165, 0) 
 middle_pixel = round(num_pixels_to_use / 2)
 
 # Light Class definition
@@ -249,32 +249,43 @@ if __name__ == '__main__':
         _LOGGER.info(f"Proportion to light: {proportion_to_light}")
         _LOGGER.info(f"Time to next tide: {time_to_next_tide}")
 
+        # Decide which pixels to light up
         for i in range(num_pixels_to_use):
-            if tide_direction == "rising":
-                _LOGGER.debug(f"tide_direction is rising")
-                pixels_to_light = round(num_pixels_to_use * proportion_to_light)
-                _LOGGER.debug(f"Pixels to light: {pixels_to_light}")
 
-                if i <= pixels_to_light:
-                    tide_position_strip[i] = high_color
-                    _LOGGER.debug(f"Pixel {i} is {high_color}")
+            # light up from the left with a full bar meaning high tide and an empty bar meaning low tide
+            pixels_to_light = round(num_pixels_to_use * proportion_to_light)
+
+            # if the tide is full light up every other pixel
+            if pixels_to_light == num_pixels_to_use:
+                if i % 2 == 0:
+                    tide_position_strip[i] = rising_color
+                    _LOGGER.debug(f"Pixel {i} is {rising_color}")
                 else:
-                    tide_position_strip[i] = (0, 0, 0 )
-                    _LOGGER.debug(f"Pixel {i} is (0, 0, 0)")
-            elif tide_direction == "falling":
-                _LOGGER.debug(f"tide_direction is falling")
-                pixels_to_light = round(num_pixels_to_use * (1-proportion_to_light))
-                _LOGGER.debug(f"Pixels to light: {pixels_to_light}")
-                if i >= pixels_to_light:
-                    tide_position_strip[i] = low_color
-                    _LOGGER.debug(f"Pixel {i} is {low_color}")
+                    tide_position_strip[i] = falling_color
+                    _LOGGER.debug(f"Pixel {i} is {falling_color}")
+            # if the tide is low light up every other pixel
+            elif pixels_to_light == 0:
+                if i % 2 == 0:
+                    tide_position_strip[i] = falling_color
+                    _LOGGER.debug(f"Pixel {i} is {falling_color}")
                 else:
-                    tide_position_strip[i] = (0, 0, 0 )
-                    _LOGGER.debug(f"Pixel {i} is (0, 0, 0)")
+                    tide_position_strip[i] = rising_color
+                    _LOGGER.debug(f"Pixel {i} is {rising_color}")
+            # if the tide is in between light up the pixels based on the tide direction
             else:
-                _LOGGER.debug(f"tide_direction is not rising or falling")
-                tide_position_strip[middle_pixel] = (255, 255, 255)
-                _LOGGER.debug(f"{middle_pixel} is (255, 255, 255)")
+                if i <= pixels_to_light:
+                        # if the tide is rising use the rising color
+                        if tide_direction == "rising":
+                            tide_position_strip[i] = rising_color
+                            _LOGGER.debug(f"Pixel {i} is {rising_color}")
+                        # if the tide is falling use the falling color
+                        elif tide_direction == "falling":
+                            tide_position_strip[i] = falling_color
+                            _LOGGER.debug(f"Pixel {i} is {falling_color}")
+                # else turn the pixel off
+                else:
+                    tide_position_strip[i] = (0, 0, 0)
+                    _LOGGER.debug(f"Pixel {i} is off")
 
         tide_position_strip.show()
 
