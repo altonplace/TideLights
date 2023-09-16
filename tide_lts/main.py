@@ -254,37 +254,41 @@ if __name__ == '__main__':
         _LOGGER.info(f"Proportion to light: {proportion_to_light}")
         _LOGGER.info(f"Time to next tide: {time_to_next_tide}")
 
+        # light up from the left with a full bar meaning high tide and an empty bar meaning low tide
+        pixels_to_light = round(num_pixels_to_use * proportion_to_light)
+        _LOGGER.info(f"Pixels to light: {pixels_to_light} based on proportion {proportion_to_light}")
+        
+        # If proportion_to_light is 0, create a series of the odd numbers in the range of num_pixels_to_use
+        if proportion_to_light == 0:
+            pixels_to_light = list(range(1, num_pixels_to_use, 2))
+            light_color = falling_color
+            _LOGGER.info(f"Setting Low tide output")
+        # If proportion_to_light is 1, create a series of the even numbers in the range of num_pixels_to_use
+        elif proportion_to_light == 1:
+            pixels_to_light = list(range(0, num_pixels_to_use, 2))
+            light_color = rising_color
+            _LOGGER.info(f"Setting High tide output")
+        # If proportion_to_light is between 0 and 1, set the pixels to light based on the tide direction
+        else:
+            _LOGGER.info(f"Setting in between tide output")
+            # create a series starting at 0 and ending at the number of pixels to light for rising tides
+            if tide_direction == "rising":
+                light_color = rising_color
+                pixels_to_light = list(range(0, pixels_to_light, 1))
+            # create a series starting at the number of pixels to light and ending at the number of pixels to use for falling tides 
+            elif tide_direction == "falling":
+                light_color = falling_color
+                pixels_to_light = list(range(num_pixels_to_use - pixels_to_light, num_pixels_to_use, 1))
+        
+        _LOGGER.info(f"Pixels to light: {pixels_to_light}")
         # Decide which pixels to light up
         for i in range(num_pixels_to_use):
-
-            # light up from the left with a full bar meaning high tide and an empty bar meaning low tide
-            pixels_to_light = round(num_pixels_to_use * proportion_to_light)
-
-            # if the tide is full light up every other pixel
-            if pixels_to_light == num_pixels_to_use:
-                if i % 2 == 0:
-                    tide_position_strip[i] = rising_color
-                    _LOGGER.debug(f"Pixel {i} is {rising_color}")
-            # if the tide is low light up every other pixel
-            elif pixels_to_light == 0:
-                if i % 2 != 0:
-                    tide_position_strip[i] = falling_color
-                    _LOGGER.debug(f"Pixel {i} is {falling_color}")
-            # if the tide is in between light up the pixels based on the tide direction
+            if i in pixels_to_light:
+                tide_position_strip[i] = light_color
+                _LOGGER.debug(f"Pixel {i} is on")
             else:
-                if i <= pixels_to_light:
-                        # if the tide is rising use the rising color
-                        if tide_direction == "rising":
-                            tide_position_strip[i] = rising_color
-                            _LOGGER.debug(f"Pixel {i} is {rising_color}")
-                        # if the tide is falling use the falling color
-                        elif tide_direction == "falling":
-                            tide_position_strip[num_pixels_to_use - i] = falling_color
-                            _LOGGER.debug(f"Pixel {i} is {falling_color}")
-                # else turn the pixel off
-                else:
-                    tide_position_strip[i] = (0, 0, 0)
-                    _LOGGER.debug(f"Pixel {i} is off")
+                tide_position_strip[i] = (0, 0, 0)
+                _LOGGER.debug(f"Pixel {i} is off")
 
         tide_position_strip.show()
 
