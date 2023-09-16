@@ -11,7 +11,7 @@ import requests
 
 
 # set the logging level
-log_level = logging.DEBUG
+log_level = logging.INFO
 # create logger
 _LOGGER = logging.getLogger('tide_lights')
 _LOGGER.setLevel(log_level)
@@ -142,6 +142,8 @@ class NOAATidePrediction:
 
 if __name__ == '__main__':
     _LOGGER.info("Starting tide_lights service")
+    noaa = NOAATidePrediction(station_id, datum, product, time_zone, interval, units)
+    fieldnames = ['t', 'v', 'type']
 
     # create the pixel objects
     # TODO - do something wih the second pixel strip
@@ -166,7 +168,6 @@ if __name__ == '__main__':
     # if there is no data.csv file, pull the data from the API
     if data == None:
         # call the NOAA API to get the tide data
-        noaa = NOAATidePrediction(station_id, datum, product, time_zone, interval, units)
         data = noaa.get_tide_data_now()
         data = data['predictions']
         _LOGGER.debug("Pulled NOAA data:")
@@ -174,7 +175,6 @@ if __name__ == '__main__':
 
         # save the data to a csv file
         with open('data.csv', 'w', newline='') as csvfile:
-            fieldnames = ['t', 'v', 'type']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for row in data:
@@ -189,7 +189,12 @@ if __name__ == '__main__':
             _LOGGER.debug(data)
 
         # get the tide data if the first data point is more than 32 hours old
-        if (datetime.strptime(data[0]['t'], "%Y-%m-%d %H:%M") - datetime.now()).total_seconds() / 3600 > 32:
+        try:
+            earliest_tide = (datetime.strptime(data[0]['t'], "%Y-%m-%d %H:%M") - datetime.now()).total_seconds() / 3600
+        except IndexError:
+            earliest_tide = -999
+
+        if earliest_tide < -32:
             _LOGGER.info("Tide data is more than 8 hours old")
             # call the NOAA API to get the tide data
             data = noaa.get_tide_data_now()
@@ -260,17 +265,11 @@ if __name__ == '__main__':
                 if i % 2 == 0:
                     tide_position_strip[i] = rising_color
                     _LOGGER.debug(f"Pixel {i} is {rising_color}")
-                else:
-                    tide_position_strip[i] = falling_color
-                    _LOGGER.debug(f"Pixel {i} is {falling_color}")
             # if the tide is low light up every other pixel
             elif pixels_to_light == 0:
-                if i % 2 == 0:
+                if i % 2 != 0:
                     tide_position_strip[i] = falling_color
                     _LOGGER.debug(f"Pixel {i} is {falling_color}")
-                else:
-                    tide_position_strip[i] = rising_color
-                    _LOGGER.debug(f"Pixel {i} is {rising_color}")
             # if the tide is in between light up the pixels based on the tide direction
             else:
                 if i <= pixels_to_light:
@@ -280,7 +279,7 @@ if __name__ == '__main__':
                             _LOGGER.debug(f"Pixel {i} is {rising_color}")
                         # if the tide is falling use the falling color
                         elif tide_direction == "falling":
-                            tide_position_strip[i] = falling_color
+                            tide_position_strip[num_pixels_to_use - i] = falling_color
                             _LOGGER.debug(f"Pixel {i} is {falling_color}")
                 # else turn the pixel off
                 else:
