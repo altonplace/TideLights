@@ -1,0 +1,9 @@
+[Unit]
+SourcePath=/usr/bin/tide_lts
+
+[Service]
+ExecStart=/usr/bin/tide_lts start
+ExecStop=/usr/bin/tide_lts stop
+
+[Install]
+WantedBy=multi-user.target
